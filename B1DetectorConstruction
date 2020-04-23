@@ -13,7 +13,7 @@ class B1DetectorConstruction : public G4VUserDetectorConstruction
     //成员函数
     B1DetectorConstruction();//声明构造函数（用来初始化数据成员），定义在.cc中
     virtual ~B1DetectorConstruction();//析构函数（在程序结束杀死new的指针对象），在有成员函数是虚函数的时候 也必须是虚函数
-    virtual G4VPhysicalVolume* Construct();//成员函数Construct（）构造一个逻辑体
+    virtual G4VPhysicalVolume* Construct();//成员函数Construct（）构造一个物理体
     //在逻辑体中调用，计数的函数（），返回值是指针，指向了逻辑体
     G4LogicalVolume* GetScoringVolume() const { return fScoringVolume; }
   protected:
