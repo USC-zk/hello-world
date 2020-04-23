@@ -1,0 +1,107 @@
+B1DetectorConstruction.hh
+#ifndef B1DetectorConstruction_h
+#define B1DetectorConstruction_h 
+#include "G4VUserDetectorConstruction.hh"
+#include "globals.hh"
+class G4VPhysicalVolume;
+class G4LogicalVolume;
+/// Detector construction class to define materials and geometry.
+//B1DetectorConstruction派生类继承父类G4VUserDetectorConstruction（公有继承）
+class B1DetectorConstruction : public G4VUserDetectorConstruction
+{
+  public:
+    //成员函数
+    B1DetectorConstruction();//声明构造函数（用来初始化数据成员），定义在.cc中
+    virtual ~B1DetectorConstruction();//析构函数（在程序结束杀死new的指针对象），在有成员函数是虚函数的时候 也必须是虚函数
+    virtual G4VPhysicalVolume* Construct();//成员函数Construct（）构造一个逻辑体
+    //在逻辑体中调用，计数的函数（），返回值是指针，指向了逻辑体
+    G4LogicalVolume* GetScoringVolume() const { return fScoringVolume; }
+  protected:
+    //受保护的数据成员，只有B1DetectorConstruction的公有继承的派生类可以调用，或者在B1DetectorConstruction类里使用
+    G4LogicalVolume*  fScoringVolume;
+};
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+B1DetectorConstruction.cc
+#include "B1DetectorConstruction.hh"
+#include "G4RunManager.hh"
+#include "G4NistManager.hh"
+#include "G4Box.hh"
+#include "G4Cons.hh"
+#include "G4Orb.hh"
+#include "G4Sphere.hh"
+#include "G4Trd.hh"
+#include "G4LogicalVolume.hh"
+#include "G4PVPlacement.hh"
+#include "G4SystemOfUnits.hh"
+#include "G4Element.hh"
+#include "G4Material.hh"
+#include "globals.hh"
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+//
+// 派生类B1DetectorConstrucion的构造函数：初始化列表：首先是基类的成员VUserDectorConstruction初始化，然后是派生类自己的数据成员fscoringVolume初始化
+B1DetectorConstruction::B1DetectorConstruction()
+: G4VUserDetectorConstruction(),
+  fScoringVolume(0)
+{ }
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+//派生类的析构函数 默认的 没写
+B1DetectorConstruction::~B1DetectorConstruction()
+{ }
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+//成员函数Constuct（） 返回值是指针（指针名字G4VPhysicalVolume） 由于在.cc中 所以要写出作用域 声明是在B1DetectorConstuction派生类中
+G4VPhysicalVolume* B1DetectorConstruction::Construct()
+{  
+    //定义材料方法一：用的是G4Element定义的  第一种材料CsI（化合物）先定义原子Cs和I 然后声明一个指针CsI 添加原子 声明个数
+    //定义原子 （“名字”，“简称”，原子序数，摩尔质量）
+    //定义材料（“名字”，密度，原子种类）
+    //利用指针添加元素（原子，原子个数）
+  // G4Element define G4Material
+    G4Element* elCs = new G4Element("Cesium","Cs",55,132.9*g/mole);
+    G4Element* elI = new G4Element("Iodine","I", 53,126.9*g/mole);
+    G4Material* CsI = new G4Material("CsI",4.51*g/cm3,2);
+    CsI->AddElement(elCs,1);
+    CsI->AddElement(elI,1);
+    //定义材料方法二：利用NIST数据库定义材料 利用NistManager类构造一个指针 调用静态成员函数Instance（）
+    //G4NISTManager define material
+    G4NistManager* man = G4NistManager::Instance();
+    // 指针man调用函数 SetVerbose（1）打印信息较详细
+    man->SetVerbose(1);`
+    //这里利用NIST库指针调用函数定义材料
+    G4Material* Pb = man->FindOrBuildMaterial("G4_Pb");
+    //define geometry
+    //定义几何 三个层次 首先定义Solid（实体 主要是形状和尺寸）
+    //这里建议不要用Solid（抽象类不能创建对象）？？ 这里用Vsolid 我不懂？？用它的派生类G4Box。
+    //G4Box是定义一个长方体
+    //再定义逻辑体 逻辑体要调用材料 这里先将材料获取GetMaterial（在G4Material里）用作用域操纵符：：给出
+    //定义逻辑体时，必须有的三项（调用实体的名字mobox、调用材料CsI、逻辑体自己的名字“LOgicalBox”）
+    //后面可以选择的（磁场、SD（灵敏体积）、step单步限值、优化逻辑体开启（G4bool Optimise = true）（这段可以不写））
+    //磁场见B2 SD见B2（灵敏体积和Hit一起使用 来统计计数）step（UserLimit用来限制时间、步长长度）
+    //0,0,0可以不写
+    //定义物理体：声明物理体的指针对象 调用G4PVPlacement函数：参数（旋转为0（旋转见B3），移动位置（相对于母体的位置，母体一般在原点），调用逻辑体，“物理体的名字”，母体（为0就是世界体），false（bool只能为false），copynumber（复制序号），检查重叠）
+    G4VSolid* myBox = new G4Box("myBox" , 150*cm , 30*cm , 50*cm);
+    G4Material* Material = G4Material::GetMaterial("CsI");
+    G4LogicalVolume* LogicalBox = new G4LogicalVolume(myBox , CsI ,"LogicalBox" , 0 , 0 , 0);
+    G4VPhysicalVolume* LogicalBox = new G4PVPlacement(0 , G4ThreeVector(0.,0.,3.*m),LogicalBox,"PhysicalBox",secondArmLogical,false,0,checkOverlaps);
+}
