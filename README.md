@@ -1,2 +1,3 @@
 # hello-world
-just a repository
+Hi!Gus！
+I will learn about Geant4 with you！
